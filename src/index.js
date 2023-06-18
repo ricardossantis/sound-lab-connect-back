@@ -1,8 +1,11 @@
 const express = require("express");
 const { client } = require('./db/redis');
+const UserRouter = require('./controller/user');
 const app = express();
 
 client.connect();
+app.use(express.json())
+app.use("/user", UserRouter)
 
 app.get('/store/:key', async (req, res) => {
   const { key } = req.params;
@@ -21,4 +24,3 @@ const port = process.env.PORT || 3000;
 app.listen(port, () => {
   console.log(`Server started on port ${port}`);
 });
-
