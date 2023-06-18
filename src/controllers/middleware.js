@@ -1,17 +1,15 @@
 require("dotenv").config();
 const jwt = require("jsonwebtoken");
-// const User = require("../models/User");
-// const Projects = require("../models/Projects");
+const User = require("../models/user");
 
-// const createContext = (req, res, next) => {
-//     req.context = {
-//         models: {
-//             User,
-//             Projects,
-//         },
-//     };
-//     next();
-// };
+const createContext = (req, res, next) => {
+    req.context = {
+        models: {
+            User
+        },
+    };
+    next();
+};
 
 const isLoggedIn = async (req, res, next) => {
     try {
@@ -38,5 +36,5 @@ const isLoggedIn = async (req, res, next) => {
 
 module.exports = {
     isLoggedIn,
-    // createContext
+    createContext
 };

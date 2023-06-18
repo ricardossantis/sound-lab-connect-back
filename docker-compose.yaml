@@ -1,27 +1,16 @@
-version: "3.9"
+version: '3'
+
 services:
-  app:
-    links:
-      - redis-stack-svc
-    build: .
-    environment:
-      - REDIS_HOST=redis-stack-svc
-      - REDIS_PORT=6379
+  mongo:
+    image: mongo
+    restart: always
     ports:
-      - "3000:3000"
+      - 27017:27017
     volumes:
-      - ./src:/app/src
-  redis-stack-svc:
-    image: redis/redis-stack-server:latest
+      - ./data:/data/db
     environment:
-      - REDIS_ARGS=--save 1200 32
-    ports:
-      - "6379:6379"
-    volumes:
-      - redis_data_svc:/data
-volumes:
-  redis_data_svc:
-    driver: local
+      - MONGO_INITDB_ROOT_USERNAME=admin
+      - MONGO_INITDB_ROOT_PASSWORD=secret
 
 
 

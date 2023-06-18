@@ -1,26 +1,33 @@
-const express = require("express");
-const { client } = require('./db/redis');
-const UserRouter = require('./controller/user');
-const app = express();
+require("dotenv").config()
+const express = require("express")
+const morgan = require("morgan")
+const {log} = require("mercedlogger")
+const cors = require("cors")
+const UserRouter = require("./controllers/user")
+const {createContext} = require("./controllers/middleware")
+const rateLimit = require('express-rate-limit')
 
-client.connect();
-app.use(express.json())
+const {PORT = 3000} = process.env
+
+const app = express()
+
+app.use(cors())
+app.use(morgan("tiny"))
+app.use(express.json({limit: '2mb'}));
+app.use(express.urlencoded({limit: '2mb'}));
+app.use(createContext)
+
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 100,
+  message: 'Rate limit exceeded'
+})
+
+app.use(limiter)
+
+app.get("/", (req, res) => {
+    res.send("this is the test route to make sure server is working")
+})
 app.use("/user", UserRouter)
 
-app.get('/store/:key', async (req, res) => {
-  const { key } = req.params;
-  const value = req.query;
-  await client.set(key, JSON.stringify(value));
-  return res.send('Success');
-});
-
-app.get('/:key', async (req, res) => {
-  const { key } = req.params;
-  const rawData = await client.get(key);
-  return res.json(JSON.parse(rawData));
-});
-
-const port = process.env.PORT || 3000;
-app.listen(port, () => {
-  console.log(`Server started on port ${port}`);
-});
+app.listen(PORT, () => log.green("SERVER STATUS", `Listening on port ${PORT}`))
