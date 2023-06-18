@@ -4,8 +4,8 @@ const { isLoggedIn } = require("./middleware");
 
 const router = Router();
 
-router.post("/createMarketplace", isLoggedIn, async (req, res) => {
-  const { Marketplace } = req.context.models;
+router.post("/create", isLoggedIn, async (req, res) => {
+  const { Marketplace, User } = req.context.models;
   const { name } = req.body
   const marketData = { name }
   const { username } = req.user; 
@@ -21,3 +21,15 @@ router.post("/createMarketplace", isLoggedIn, async (req, res) => {
     res.status(400).json({ error });
   }
 })
+
+router.get("/all", isLoggedIn, async (req, res) => {
+  const { Marketplace } = req.context.models;
+  const { username } = req.user; 
+  try {
+    res.json(await Marketplace.find({ users: username }))
+  } catch (error) {
+    res.status(400).json({ error })
+  }
+});
+
+module.exports = router;

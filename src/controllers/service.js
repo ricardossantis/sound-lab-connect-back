@@ -4,7 +4,7 @@ const { isLoggedIn } = require("./middleware");
 
 const router = Router();
 
-router.post("/createServiceOffer", isLoggedIn, async (req, res) => {
+router.post("/create", isLoggedIn, async (req, res) => {
   const { Service } = req.context.models;
   const { title, description, price } = req.body
   const serviceData = { title, description, price }
@@ -21,3 +21,5 @@ router.post("/createServiceOffer", isLoggedIn, async (req, res) => {
     res.status(400).json({ error });
   }
 })
+
+module.exports = router;

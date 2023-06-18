@@ -1,11 +1,15 @@
 require("dotenv").config();
 const jwt = require("jsonwebtoken");
 const User = require("../models/user");
+const Marketplace = require("../models/marketplace");
+const Service = require("../models/service");
 
 const createContext = (req, res, next) => {
     req.context = {
         models: {
-            User
+            User,
+            Marketplace,
+            Service
         },
     };
     next();

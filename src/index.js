@@ -4,6 +4,8 @@ const morgan = require("morgan")
 const {log} = require("mercedlogger")
 const cors = require("cors")
 const UserRouter = require("./controllers/user")
+const MarketplaceRouter = require("./controllers/marketplace")
+const ServiceRouter = require("./controllers/service")
 const {createContext} = require("./controllers/middleware")
 const rateLimit = require('express-rate-limit')
 
@@ -29,5 +31,7 @@ app.get("/", (req, res) => {
     res.send("this is the test route to make sure server is working")
 })
 app.use("/user", UserRouter)
+app.use("/marketplace", MarketplaceRouter)
+app.use("/service", ServiceRouter)
 
 app.listen(PORT, () => log.green("SERVER STATUS", `Listening on port ${PORT}`))
