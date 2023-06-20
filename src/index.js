@@ -9,7 +9,7 @@ const MarketplaceRouter = require("./controllers/marketplace")
 const ServiceRouter = require("./controllers/service")
 const {createContext} = require("./controllers/middleware")
 const rateLimit = require('express-rate-limit')
-const rabbitMQHandler = require('./connection/rabbitMq')
+const { initRabbitConnection } = require('./handlers/rabbitMqHandler')
 
 const app = express()
 const server = http.createServer(app);
@@ -49,28 +49,5 @@ app.use("/user", UserRouter)
 app.use("/marketplace", MarketplaceRouter)
 app.use("/service", ServiceRouter)
 
+initRabbitConnection(socketIO)
 server.listen(PORT, () => log.green("SERVER STATUS", `Listening on port ${PORT}`));
-
-rabbitMQHandler((connection) => {
-  connection.createChannel((err, channel) => {
-    if (err) {
-      throw new Error(err);
-    }
-    const mainQueue = 'mixing'
-    channel.assertExchange(mainQueue, 'fanout', { durable: false }, (err, exchange) => {
-      if (err) {
-        throw new Error(err);
-      }
-      channel.assertQueue('', {exclusive: true}, (err, queue) => {
-        if (err) {
-          throw new Error(err)
-        }
-        channel.bindQueue(queue.queue, mainQueue, '')
-        channel.consume(queue.queue, (msg) => {
-          const result = JSON.stringify({result: Object.values(JSON.parse(msg.content.toString()))});
-          socketIO.emit('feed', result)
-        })
-      }, {noAck: false})
-    });
-  })
-})

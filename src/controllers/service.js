@@ -1,7 +1,7 @@
 require("dotenv").config();
 const { Router } = require("express");
 const { isLoggedIn } = require("./middleware");
-const rabbitMQHandler = require('../connection/rabbitMq')
+const { addServiceToQueue } = require('../handlers/rabbitMqHandler')
 
 const router = Router();
 
@@ -21,20 +21,5 @@ router.post("/create/:mkName", isLoggedIn, async (req, res) => {
     res.status(400).json({ error });
   }
 })
-
-const addServiceToQueue = (mkName, service) => {
-  rabbitMQHandler((connection) => {
-    connection.createChannel((err, channel) => {
-      if (err) {
-        throw new Error(err)
-      }
-      const msg = JSON.stringify(service);
-
-      channel.publish(mkName, '', new Buffer(msg), {persistent: true})
-
-      channel.close(() => {connection.close()})
-    })
-  })
-}
 
 module.exports = router;
