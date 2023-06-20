@@ -40,7 +40,7 @@ router.patch("/updateApproval", isLoggedIn, async (req, res) => {
   const { username } = req.user; 
   const user = await User.findOne({ username });
   try {
-    if(user && !!user.isAdmin){
+    if(user?.role === 'admin'){
       const updated = await User.findOneAndUpdate({ username: usernameToUpdate }, { $set: { isApproved }}, { new: true });
       res.json({ username: updated.username, isApproved: updated.isApproved });
     } else {
@@ -58,7 +58,7 @@ router.patch("/updateRole", isLoggedIn, async (req, res) => {
   const { username } = req.user; 
   const user = await User.findOne({ username });
   try {
-    if(user && !!user.isAdmin){
+    if(user?.role === 'admin'){
       const updated = await User.findOneAndUpdate({ username: usernameToUpdate }, { $set: { isAdmin }}, { new: true });
       res.json({ username: updated.username, isAdmin: updated.isAdmin });
     } else {

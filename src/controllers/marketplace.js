@@ -11,7 +11,7 @@ router.post("/create", isLoggedIn, async (req, res) => {
   const { username } = req.user; 
   const user = await User.findOne({ username });
   try {
-    if(user && !!user.isAdmin){
+    if(user?.role === 'admin'){
       const marketplace = await Marketplace.create(marketData);
       res.json({ marketplace });
     } else {

@@ -1,25 +1,40 @@
 require("dotenv").config();
 const { Router } = require("express");
-const { isLoggedIn } = require("./middleware"); 
+const { isLoggedIn } = require("./middleware");
+const rabbitMQHandler = require('../connection/rabbitMq')
 
 const router = Router();
 
-router.post("/create", isLoggedIn, async (req, res) => {
-  const { Service } = req.context.models;
+router.post("/create/:mkName", isLoggedIn, async (req, res) => {
+  const { Service, Marketplace } = req.context.models;
   const { title, description, price } = req.body
+  const { mkName: name } = req.params
   const serviceData = { title, description, price }
-  const { username } = req.user; 
-  const user = await User.findOne({ username });
+  const marketplace = await Marketplace.findOne({ name });
   try {
-    if(user && !!user.isAdmin){
-      const service = await Service.create(serviceData);
-      res.json({ marketplace });
-    } else {
-      res.status(400).json({ error: 'Usuário não possui permissão' });
-    }
+    const service = await Service.create(serviceData);
+    const mkPayload = { services: [...new Set([...marketplace.services, service.id])]}
+    await Marketplace.findOneAndUpdate({name}, {$set: mkPayload}, { new: true })
+    await addServiceToQueue(name, service)
+    res.json({ service });
   } catch (error) {
     res.status(400).json({ error });
   }
 })
+
+const addServiceToQueue = (mkName, service) => {
+  rabbitMQHandler((connection) => {
+    connection.createChannel((err, channel) => {
+      if (err) {
+        throw new Error(err)
+      }
+      const msg = JSON.stringify(service);
+
+      channel.publish(mkName, '', new Buffer(msg), {persistent: true})
+
+      channel.close(() => {connection.close()})
+    })
+  })
+}
 
 module.exports = router;
