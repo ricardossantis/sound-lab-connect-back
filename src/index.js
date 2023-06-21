@@ -28,8 +28,8 @@ socketIO.on('connection', async (socket) => {
   const userId = socket?.id
   activeUsers.add(userId);
 
-  const { feeds, queue } = await retrieveFeedItems()
-  emitFeedItems(feeds, userId, queue, socketIO) ;
+  const allFeeds = await retrieveFeedItems()
+  allFeeds.forEach(({feeds, queue}) => emitFeedItems(feeds, userId, queue, socketIO))
 
   socket.on('disconnect', () => {
     activeUsers.delete(userId);

@@ -1,6 +1,6 @@
 const rabbitMQHandler = require("../connection/rabbitMq");
-const { listMarketplaces } = require('../handlers/marketplaceHandler')
-const Feed = require('../models/feed')
+const { listMarketplaces } = require('./marketplaceHandler')
+const { saveFeedItems } = require('./feedHandler')
 
 const initRabbitConnection = async (socketIO, activeUsers) => {
   const mainQueues = await listMarketplaces()
@@ -23,10 +23,9 @@ const initRabbitConnection = async (socketIO, activeUsers) => {
             channel.consume(queue.queue, async (msg) => {
               const message = msg.content.toString()
               await saveFeedItems(message, mainQueue);
-              activeUsers.forEach((_socket) => {
-                socketIO.emit(`${mainQueue}-feed`, [message]);
+              activeUsers.forEach(userId => {
+                socketIO.to(userId).emit(`${mainQueue}-feed`, message);
               });
-
               channel.ack(msg);
             })
           })
@@ -36,21 +35,6 @@ const initRabbitConnection = async (socketIO, activeUsers) => {
   })
 }
 
-const saveFeedItems = (msg, queue) => Feed.create({ msg, queue })
-
-const retrieveFeedItems = async (queue = 'mixing') => {
-  // const mainQueues = await listMarketplaces()
-  const feeds = await Feed.find({ queue })
-  return { feeds, queue }
-}
-
-const emitFeedItems = async (feeds, userId, mainQueue, socketIO) => {
-   feeds.forEach(feed => {
-   const message = JSON.stringify(feed);
-   socketIO.to(userId).emit(`${mainQueue}-feed`, message);
- })
-}
-
 const addServiceToQueue = (mkName, service) => {
   rabbitMQHandler((connection) => {
     connection.createChannel((err, channel) => {
@@ -58,9 +42,7 @@ const addServiceToQueue = (mkName, service) => {
         throw new Error(err)
       }
       const msg = JSON.stringify(service);
-
       channel.publish(mkName, '', new Buffer(msg), {persistent: true})
-
       channel.close(() => {connection.close()})
     })
   })
@@ -68,7 +50,5 @@ const addServiceToQueue = (mkName, service) => {
 
 module.exports = {
   initRabbitConnection,
-  addServiceToQueue,
-  emitFeedItems,
-  retrieveFeedItems
+  addServiceToQueue
 }
