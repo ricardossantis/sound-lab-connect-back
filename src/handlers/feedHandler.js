@@ -12,15 +12,18 @@ const retrieveFeedItems = async () => {
       .limit(10)
     return { feeds, queue }
   })
-
   return allFeeds
 }
 
 const emitFeedItems = async (feeds, userId, mainQueue, socketIO) => {
-  feeds.forEach(feed => {
-    const message = JSON.stringify(feed);
-    socketIO.to(userId).emit(`${mainQueue}-feed`, message);
-  })
+  for (const feed of feeds) {
+    try {
+      const message = JSON.stringify(feed);
+      socketIO.to(userId).emit(`${mainQueue}-feed`, message);
+    } catch (error) {
+      console.error(error);
+    }
+  }
 }
 
 module.exports = {
