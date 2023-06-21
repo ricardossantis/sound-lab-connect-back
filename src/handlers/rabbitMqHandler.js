@@ -1,7 +1,8 @@
 const rabbitMQHandler = require("../connection/rabbitMq");
 const { listMarketplaces } = require('../handlers/marketplaceHandler')
+const Feed = require('../models/feed')
 
-const initRabbitConnection = async (socketIO) => {
+const initRabbitConnection = async (socketIO, activeUsers) => {
   const mainQueues = await listMarketplaces()
 
   rabbitMQHandler((connection) => {
@@ -19,15 +20,35 @@ const initRabbitConnection = async (socketIO) => {
               throw new Error(err)
             }
             channel.bindQueue(queue.queue, mainQueue, '')
-            channel.consume(queue.queue, (msg) => {
-              const result = JSON.stringify({result: Object.values(JSON.parse(msg.content.toString()))});
-              socketIO.emit(`${mainQueue}-feed`, result)
+            channel.consume(queue.queue, async (msg) => {
+              const message = msg.content.toString()
+              await saveFeedItems(message, mainQueue);
+              activeUsers.forEach((_socket) => {
+                socketIO.emit(`${mainQueue}-feed`, [message]);
+              });
+
+              channel.ack(msg);
             })
-          }, {noAck: false})
-        });
-      })
+          })
+        }, {noAck: false})
+      });
     })
   })
+}
+
+const saveFeedItems = (msg, queue) => Feed.create({ msg, queue })
+
+const retrieveFeedItems = async (queue = 'mixing') => {
+  // const mainQueues = await listMarketplaces()
+  const feeds = await Feed.find({ queue })
+  return { feeds, queue }
+}
+
+const emitFeedItems = async (feeds, userId, mainQueue, socketIO) => {
+   feeds.forEach(feed => {
+   const message = JSON.stringify(feed);
+   socketIO.to(userId).emit(`${mainQueue}-feed`, message);
+ })
 }
 
 const addServiceToQueue = (mkName, service) => {
@@ -47,5 +68,7 @@ const addServiceToQueue = (mkName, service) => {
 
 module.exports = {
   initRabbitConnection,
-  addServiceToQueue
+  addServiceToQueue,
+  emitFeedItems,
+  retrieveFeedItems
 }

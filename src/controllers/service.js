@@ -2,14 +2,16 @@ require("dotenv").config();
 const { Router } = require("express");
 const { isLoggedIn } = require("./middleware");
 const { addServiceToQueue } = require('../handlers/rabbitMqHandler')
-
+const moment = require('moment')
 const router = Router();
 
 router.post("/create/:mkName", isLoggedIn, async (req, res) => {
   const { Service, Marketplace } = req.context.models;
   const { title, description, price } = req.body
+  const { username } = req.user
   const { mkName: name } = req.params
-  const serviceData = { title, description, price }
+  const now = moment().valueOf()
+  const serviceData = { title, description, price, marketplace: name, owner: username, createAt: now }
   const marketplace = await Marketplace.findOne({ name });
   try {
     const service = await Service.create(serviceData);
