@@ -59,5 +59,5 @@ app.use("/user", UserRouter)
 app.use("/marketplace", MarketplaceRouter)
 app.use("/service", ServiceRouter)
 
-initRabbitConnection(socketIO, activeUsers)
+await initRabbitConnection(socketIO, activeUsers)
 server.listen(PORT, () => log.green("SERVER STATUS", `Listening on port ${PORT}`));
