@@ -16,7 +16,7 @@ router.post("/signup", async (req, res) => {
     const stripeAccount = await stripe.accounts.create({
       type: 'express',
     });
-    const userData = { password: req.body.password, username: req.body.username, isApproved: false, stripeAccount }
+    const userData = { password: req.body.password, username: req.body.username, isApproved: false, stripeAccount, role: 'basic' }
     const user = await User.create(userData);
     const { username } = user
     res.json({ username });

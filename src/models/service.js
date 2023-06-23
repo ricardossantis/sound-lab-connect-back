@@ -6,7 +6,9 @@ const ServiceSchema = new Schema({
     price: {type: Number, required: true},
     marketplace: {type: String, required: true},
     owner: {type: String, required: true},
-    createAt: {type: Number, required: true}
+    createAt: {type: Number, required: true},
+    product: {type: Object, required: false},
+    priceStripe: {type: Object, required: true},
 })
 
 const Service = model("Service", ServiceSchema)
