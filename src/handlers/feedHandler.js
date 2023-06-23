@@ -6,23 +6,21 @@ const saveFeedItems = (msg, queue) => Feed.create({ msg, queue, createAt: moment
 
 const retrieveFeedItems = async () => {
   const mainQueues = await listMarketplaces()
-  const allFeeds = mainQueues.map(async queue => {
-    const feeds = await Feed.find({ queue })
+  const allFeeds = await Promise.all(mainQueues.map(queue => {
+    return Feed.find({ queue })
       .sort({ createAt: -1 })
       .limit(10)
-    return { feeds, queue }
-  })
+      .then(feeds => ({feeds, queue}))
+  }))
   return allFeeds
 }
 
 const emitFeedItems = async (feeds, userId, mainQueue, socketIO) => {
-  for (const feed of feeds) {
-    try {
-      const message = JSON.stringify(feed);
-      socketIO.to(userId).emit(`${mainQueue}-feed`, message);
-    } catch (error) {
-      console.error(error);
-    }
+  try {
+    const message = JSON.stringify(feeds);
+    socketIO.to(userId).emit(`${mainQueue}-feed`, message);
+  } catch (error) {
+    console.error(error);
   }
 }
 

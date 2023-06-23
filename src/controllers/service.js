@@ -24,4 +24,14 @@ router.post("/create/:mkName", isLoggedIn, async (req, res) => {
   }
 })
 
+router.get("/allFromUser", isLoggedIn, async (req, res) => {
+  const { Service } = req.context.models;
+  const { username } = req.user;
+  try {
+    res.json(await Service.find({ owner: username }))
+  } catch (error) {
+    res.status(400).json({ error })
+  }
+});
+
 module.exports = router;

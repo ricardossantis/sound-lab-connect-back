@@ -9,7 +9,8 @@ const MarketplaceRouter = require("./controllers/marketplace")
 const ServiceRouter = require("./controllers/service")
 const {createContext} = require("./controllers/middleware")
 const rateLimit = require('express-rate-limit')
-const { initRabbitConnection, emitFeedItems, retrieveFeedItems} = require('./handlers/rabbitMqHandler')
+const { initRabbitConnection } = require('./handlers/rabbitMqHandler')
+const { emitFeedItems, retrieveFeedItems} = require('./handlers/feedHandler')
 
 const app = express()
 const server = http.createServer(app);
@@ -59,5 +60,5 @@ app.use("/user", UserRouter)
 app.use("/marketplace", MarketplaceRouter)
 app.use("/service", ServiceRouter)
 
-await initRabbitConnection(socketIO, activeUsers)
+initRabbitConnection(socketIO, activeUsers)
 server.listen(PORT, () => log.green("SERVER STATUS", `Listening on port ${PORT}`));
