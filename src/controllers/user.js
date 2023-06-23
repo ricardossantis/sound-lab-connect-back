@@ -3,6 +3,7 @@ const { Router } = require("express");
 const { isLoggedIn } = require("./middleware"); 
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+const stripe = require("stripe")(process.env.STRIPE_API_KEY);
 
 const router = Router();
 
@@ -12,7 +13,10 @@ router.post("/signup", async (req, res) => {
   const { User } = req.context.models;
   try {
     req.body.password = await bcrypt.hash(req.body.password, 10);
-    const userData = { password: req.body.password, username: req.body.username, isApproved: false }
+    const stripeAccount = await stripe.accounts.create({
+      type: 'express',
+    });
+    const userData = { password: req.body.password, username: req.body.username, isApproved: false, stripeAccount }
     const user = await User.create(userData);
     const { username } = user
     res.json({ username });
