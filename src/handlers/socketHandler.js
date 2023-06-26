@@ -1,0 +1,54 @@
+const {retrieveFeedItems, emitFeedItems} = require("./feedHandler");
+const {initRabbitConnection} = require("./rabbitMqHandler");
+const Message = require('../models/message')
+
+const initConnections = (socketIO) => {
+  let activeUsers = [...new Set()];
+  let chatRoom = '';
+
+  socketIO.on('connection', async (socket) => {
+    const userId = socket?.id
+    activeUsers.push({ userId, username: '', room: '' });
+
+    const allFeeds = await retrieveFeedItems()
+    allFeeds.forEach(({feeds, queue}) => emitFeedItems(feeds, userId, queue, socketIO))
+
+    socket.on('joinChat', async (data) => {
+      const { username, room } = data;
+      const index = activeUsers.findIndex(user => user.userId === socket.id)
+      activeUsers[index].username = username
+      activeUsers[index].room = room
+      socket.join(room);
+
+      Message.find({ room })
+        .limit(100)
+        .then((messages) => socketIO.emit(`last_100_messages_${room}`, messages))
+
+      socketIO.emit(`receive_message_${room}`, {
+        message: `Welcome ${username}`,
+        username: 'CHAT_BOT',
+        createdTime: Date.now()
+      });
+
+      chatRoom = room;
+      const chatRoomUsers = activeUsers.filter((user) => user.room === room);
+      socketIO.emit(`chatroom_users_${room}`, chatRoomUsers);
+    })
+
+    socket.on('send_message', async (data) => {
+      const { message, username, room, createdTime } = data;
+      socketIO.emit(`receive_message_${room}`, data);
+      await Message.create({ message, username, room, createdTime })
+    });
+
+    socket.on('disconnect', () => {
+      activeUsers = activeUsers.filter(user => user.userId !== socket.id)
+    });
+  });
+
+  return initRabbitConnection(socketIO, activeUsers)
+}
+
+module.exports = {
+  initConnections
+}
