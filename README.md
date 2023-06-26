@@ -4,12 +4,13 @@
 ## Features:
 
 ##	- marketplace
-###		- offer service
-###		- contract service
-###		- internal/external payment handling
+###	- offer service
+###	- contract service
+###	- stripe payment handling
+### - chat per service
 
 ##	- feed
-###		- show last created services 
+###	- show last created services 
 
 # Usage
 
