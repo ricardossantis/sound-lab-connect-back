@@ -11,7 +11,7 @@ const initRabbitConnection = async (socketIO, activeUsers) => {
         throw new Error(err);
       }
       mainQueues.forEach((mainQueue) => {
-        channel.assertExchange(mainQueue, 'fanout', { durable: false }, (err, exchange) => {
+        channel.assertExchange(mainQueue, 'fanout', { durable: false }, (err, _exchange) => {
           if (err) {
             throw new Error(err);
           }
@@ -35,14 +35,41 @@ const initRabbitConnection = async (socketIO, activeUsers) => {
   })
 }
 
-const addServiceToQueue = (mkName, service) => {
+const createUserQueue = (queueName, socketIO) => {
+  rabbitMQHandler((connection) => {
+    connection.createChannel((err, channel) => {
+      if (err) {
+        throw new Error(err);
+      }
+      channel.assertExchange(queueName, 'fanout', { durable: false }, (err, _exchange) => {
+        if (err) {
+          throw new Error(err);
+        }
+        channel.assertQueue('', {exclusive: true}, (err, queue) => {
+          if (err) {
+            throw new Error(err)
+          }
+          channel.bindQueue(queue.queue, queueName, '')
+          channel.consume(queue.queue, async (msg) => {
+            const message = msg.content.toString()
+            socketIO.emit(`${queueName}`, message);
+            channel.ack(msg);
+          })
+        })
+      }, {noAck: false})
+    })
+  })
+}
+
+
+const addServiceToQueue = (queueName, service) => {
   rabbitMQHandler((connection) => {
     connection.createChannel((err, channel) => {
       if (err) {
         throw new Error(err)
       }
       const msg = JSON.stringify(service);
-      channel.publish(mkName, '', new Buffer(msg), {persistent: true})
+      channel.publish(queueName, '', new Buffer(msg), {persistent: true})
       channel.close(() => {connection.close()})
     })
   })
@@ -50,5 +77,6 @@ const addServiceToQueue = (mkName, service) => {
 
 module.exports = {
   initRabbitConnection,
-  addServiceToQueue
+  addServiceToQueue,
+  createUserQueue
 }

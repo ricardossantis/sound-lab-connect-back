@@ -1,5 +1,5 @@
 const {retrieveFeedItems, emitFeedItems} = require("./feedHandler");
-const {initRabbitConnection} = require("./rabbitMqHandler");
+const {initRabbitConnection, createUserQueue, addServiceToQueue} = require("./rabbitMqHandler");
 const Message = require('../models/message')
 
 const initConnections = (socketIO) => {
@@ -14,11 +14,13 @@ const initConnections = (socketIO) => {
     allFeeds.forEach(({feeds, queue}) => emitFeedItems(feeds, userId, queue, socketIO))
 
     socket.on('joinChat', async (data) => {
-      const { username, room } = data;
+      const { username, room, owner } = data;
       const index = activeUsers.findIndex(user => user.userId === socket.id)
       activeUsers[index].username = username
       activeUsers[index].room = room
       socket.join(room);
+      createUserQueue(owner, socketIO)
+      addServiceToQueue(owner, { username, room })
 
       Message.find({ room })
         .limit(100)
@@ -36,9 +38,10 @@ const initConnections = (socketIO) => {
     })
 
     socket.on('send_message', async (data) => {
-      const { message, username, room, createdTime } = data;
+      const { message, username, room, createdTime, owner } = data;
       socketIO.emit(`receive_message_${room}`, data);
-      await Message.create({ message, username, room, createdTime })
+      await Message.create({ message, username, room, owner, createdTime })
+      addServiceToQueue(owner, data)
     });
 
     socket.on('disconnect', () => {
