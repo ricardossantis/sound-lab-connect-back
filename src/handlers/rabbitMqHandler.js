@@ -41,26 +41,20 @@ const createUserQueue = (queueName, socketIO) => {
       if (err) {
         throw new Error(err);
       }
-      channel.assertExchange(queueName, 'fanout', { durable: false }, (err, _exchange) => {
+      channel.assertQueue(queueName, { durable: false, autoDelete: false }, (err, queue) => {
         if (err) {
           throw new Error(err);
         }
-        channel.assertQueue('', {exclusive: true}, (err, queue) => {
-          if (err) {
-            throw new Error(err)
-          }
-          channel.bindQueue(queue.queue, queueName, '')
-          channel.consume(queue.queue, async (msg) => {
-            const message = msg.content.toString()
-            socketIO.emit(`${queueName}`, message);
-            channel.ack(msg);
-          })
+        channel.bindQueue(queue.queue, queueName, '')
+        channel.consume(queue.queue, async (msg) => {
+          const message = msg.content.toString()
+          socketIO.emit(`${queueName}`, message);
+          channel.ack(msg);
         })
-      }, {noAck: false})
-    })
-  })
-}
-
+      }, { noAck: true });
+    });
+  });
+};
 
 const addServiceToQueue = (queueName, service) => {
   rabbitMQHandler((connection) => {
@@ -69,7 +63,7 @@ const addServiceToQueue = (queueName, service) => {
         throw new Error(err)
       }
       const msg = JSON.stringify(service);
-      channel.publish(queueName, '', new Buffer(msg), {persistent: true})
+      channel.publish(queueName, '', new Buffer(msg), {persistent: false})
       channel.close(() => {connection.close()})
     })
   })

@@ -29,7 +29,7 @@ router.post("/create/:mkName", isLoggedIn, async (req, res) => {
     await addServiceToQueue(name, service)
     res.json({ service });
   } catch (error) {
-    res.status(400).json({ error });
+    res.status(400).json(error);
   }
 })
 
@@ -39,7 +39,7 @@ router.get("/allFromUser", isLoggedIn, async (req, res) => {
   try {
     res.json(await Service.find({ owner: username }))
   } catch (error) {
-    res.status(400).json({ error })
+    res.status(400).json(error)
   }
 });
 

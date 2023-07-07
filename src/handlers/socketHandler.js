@@ -6,6 +6,12 @@ const initConnections = (socketIO) => {
   let activeUsers = [...new Set()];
   let chatRoom = '';
 
+  socketIO.use((socket, next) => {
+    const username = socket.handshake.auth.username
+    createUserQueue(username, socketIO)
+    next()
+  });
+
   socketIO.on('connection', async (socket) => {
     const userId = socket?.id
     activeUsers.push({ userId, username: '', room: '' });
@@ -19,8 +25,7 @@ const initConnections = (socketIO) => {
       activeUsers[index].username = username
       activeUsers[index].room = room
       socket.join(room);
-      createUserQueue(owner, socketIO)
-      addServiceToQueue(owner, { username, room })
+      addServiceToQueue(owner, { username, room, message: 'iniciou chat' })
 
       Message.find({ room })
         .limit(100)
@@ -41,7 +46,7 @@ const initConnections = (socketIO) => {
       const { message, username, room, createdTime, owner } = data;
       socketIO.emit(`receive_message_${room}`, data);
       await Message.create({ message, username, room, owner, createdTime })
-      addServiceToQueue(owner, data)
+      if (!activeUsers.find(user => user.username === owner)) addServiceToQueue(owner, data)
     });
 
     socket.on('disconnect', () => {

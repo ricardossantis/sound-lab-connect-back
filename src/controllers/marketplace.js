@@ -18,7 +18,7 @@ router.post("/create", isLoggedIn, async (req, res) => {
       res.status(400).json({ error: 'Usuário não possui permissão' });
     }
   } catch (error) {
-    res.status(400).json({ error });
+    res.status(400).json(error);
   }
 })
 
@@ -28,7 +28,7 @@ router.get("/all", isLoggedIn, async (req, res) => {
   try {
     res.json(await Marketplace.find({ users: username }))
   } catch (error) {
-    res.status(400).json({ error })
+    res.status(400).json(error)
   }
 });
 
